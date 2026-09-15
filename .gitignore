@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+jobs/*
+!jobs/.gitkeep
+# generated wrapper playbooks (created next to task files, auto-cleaned)
+__deployer_job_*.yml

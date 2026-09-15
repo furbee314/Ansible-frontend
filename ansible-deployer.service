@@ -1,0 +1,15 @@
+[Unit]
+Description=Ansible Deployer (web UI for network host discovery + ansible deployment)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/ansible-deployer
+ExecStart=/usr/bin/python3 /opt/ansible-deployer/app.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
