@@ -1,6 +1,0 @@
-# Runtime dependencies (system packages on RHEL 9):
-#   python3, python3-flask, python3-yaml, ansible (>=2.15)
-#   optional: sshpass  (only needed for password-based SSH auth)
-flask>=3.0
-waitress>=2.1
-PyYAML>=6.0

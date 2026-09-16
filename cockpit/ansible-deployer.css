@@ -1,0 +1,99 @@
+/* Ansible Deployer — Cockpit module (self-contained styling) */
+
+#ad-app {
+    --ad-bg: var(--pf-v6--global--background--color--default, #151515);
+    --ad-panel: var(--pf-v6--global--background--color--secondary, #1b1b1b);
+    --ad-border: var(--pf-v6--global--border--color--default, #3c3f42);
+    --ad-text: var(--pf-v6--global--text--color--default, #ffffff);
+    --ad-dim: var(--pf-v6--global--text--color--subtle, #a8a8a8);
+    --ad-accent: var(--pf-v6--global--primary--color--100, #712bef);
+    --ad-ok: var(--pf-v6--global--success--color--100, #48c77e);
+    --ad-err: var(--pf-v6--global--danger--color--100, #cc005d);
+
+    font-family: var(--pf-v6--global--font-family, "RedHatText", sans-serif);
+    color: var(--ad-text);
+    padding: 0 2rem 2rem;
+}
+
+/* header */
+.ad-header { display: flex; align-items: baseline; gap: 1rem;
+    padding: 1.25rem 0 1rem; border-bottom: 1px solid var(--ad-border); }
+.ad-header-title { font-size: 1.25rem; font-weight: 700; }
+.ad-header-sub { color: var(--ad-dim); font-size: .85rem; }
+
+/* layout */
+.ad-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1rem; margin-top: 1rem; align-items: start; }
+@media (max-width: 900px) { .ad-main { grid-template-columns: 1fr; } }
+.ad-col { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+
+/* panels */
+.ad-panel { background: var(--ad-panel); border: 1px solid var(--ad-border);
+    border-radius: 6px; }
+.ad-panel-head { display: flex; justify-content: space-between; align-items: center;
+    padding: .6rem .9rem; border-bottom: 1px solid var(--ad-border);
+    font-size: .8rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; color: var(--ad-dim); }
+.ad-panel-body { padding: .9rem; }
+
+/* fields */
+.ad-row { display: flex; gap: .75rem; margin-bottom: .5rem; }
+.ad-field { margin-bottom: .6rem; display: flex; flex-direction: column; }
+.ad-field.ad-grow { flex: 1; }
+.ad-field.ad-narrow { flex: 0 0 6rem; }
+.ad-field label { font-size: .75rem; color: var(--ad-dim); margin-bottom: .25rem; }
+.ad-field input { width: 100%; padding: .45rem .6rem; font: inherit;
+    background: var(--ad-bg); color: var(--ad-text);
+    border: 1px solid var(--ad-border); border-radius: 4px; }
+.ad-field input:focus { outline: 1px solid var(--ad-accent); }
+#ad-pb-filter { width: 100%; padding: .45rem .6rem; font: inherit;
+    background: var(--ad-bg); color: var(--ad-text);
+    border: 1px solid var(--ad-border); border-radius: 4px; margin-bottom: .5rem; }
+
+/* host table */
+.ad-table-wrap { max-height: 15rem; overflow: auto; margin-top: .5rem; }
+.ad-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.ad-table th, .ad-table td { text-align: left; padding: .35rem .5rem;
+    border-bottom: 1px solid var(--ad-border); }
+.ad-table th { color: var(--ad-dim); font-size: .7rem; text-transform: uppercase;
+    position: sticky; top: 0; background: var(--ad-panel); }
+.ad-table tr.sel td { background: color-mix(in srgb, var(--ad-ok) 15%, transparent); }
+.ad-table .ad-ip { font-weight: 600; }
+
+/* playbook list */
+#ad-pb-list { max-height: 20rem; overflow: auto; margin-bottom: .5rem; }
+.ad-play { display: flex; align-items: center; gap: .5rem; padding: .4rem .3rem;
+    border-radius: 4px; cursor: pointer; font-size: .85rem; }
+.ad-play:hover { background: var(--ad-bg); }
+.ad-play .ad-name { flex: 1; min-width: 0; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+.ad-play .ad-dir { color: var(--ad-dim); font-size: .7rem; }
+
+/* badges */
+.ad-badge { display: inline-block; padding: 0 .5rem; border-radius: 9px;
+    font-size: .68rem; border: 1px solid var(--ad-border); vertical-align: middle; }
+.ad-badge.ad-task { color: var(--pf-v6--global--warning--color--100, #b58a00);
+    border-color: currentColor; }
+.ad-badge.ad-playbook { color: var(--ad-ok); border-color: currentColor; }
+.ad-badge.ad-success { background: var(--ad-ok); color: #fff; border-color: var(--ad-ok); }
+.ad-badge.ad-error { background: var(--ad-err); color: #fff; border-color: var(--ad-err); }
+.ad-badge.ad-running { background: var(--ad-accent); color: #fff;
+    border-color: var(--ad-accent); animation: ad-pulse 1.5s infinite; }
+.ad-badge.ad-cancelled { color: var(--ad-dim); }
+@keyframes ad-pulse { 50% { opacity: .55; } }
+
+/* deploy bar + log */
+.ad-deploy-bar { display: flex; justify-content: space-between; align-items: center;
+    padding: .7rem .9rem; }
+#ad-job-log { background: var(--ad-bg); border: 1px solid var(--ad-border);
+    border-radius: 4px; padding: .8rem; min-height: 12rem; max-height: 24rem;
+    overflow: auto; font-size: .78rem; white-space: pre-wrap;
+    word-break: break-word; margin: 0 0 .5rem; }
+#ad-job-panel { margin-top: 1rem; }
+.ad-hidden { display: none !important; }
+.ad-muted { color: var(--ad-dim); font-size: .78rem; }
+.ad-spinner { display: inline-block; width: .8rem; height: .8rem;
+    border: 2px solid var(--ad-dim); border-top-color: var(--ad-accent);
+    border-radius: 50%; animation: ad-spin .8s linear infinite;
+    vertical-align: -2px; margin-right: .4rem; }
+@keyframes ad-spin { to { transform: rotate(360deg); } }

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<!--
+Ansible Deployer — Cockpit module
+MIT License, see LICENSE in the repository root.
+-->
+<html id="ansible-deployer-page" lang="en">
+<head>
+    <title translatable="yes">Ansible Deployer</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="ansible-deployer.css">
+
+    <script type="text/javascript" src="../base1/cockpit.js"></script>
+    <script type="text/javascript" src="../base1/po.js"></script>
+    <script type="text/javascript" src="po.js"></script>
+    <script type="text/javascript" src="ansible-deployer.js"></script>
+</head>
+
+<body class="pf-v6-m-tabular-nums">
+    <div id="ad-app">
+        <div class="ad-header">
+            <span class="ad-header-title" translatable="yes">Ansible Deployer</span>
+            <span class="ad-header-sub" translatable="yes">
+                Pick network hosts, pick a playbook, deploy.
+            </span>
+        </div>
+
+        <div class="ad-main">
+            <div class="ad-col">
+                <div class="ad-panel">
+                    <div class="ad-panel-head">
+                        <span translatable="yes">Network hosts</span>
+                        <button id="ad-btn-scan" class="pf-v6-c-button pf-m-plain">
+                            <span class="pf-v6-button-icon" aria-hidden="true">⟳</span>
+                            <span translatable="yes">Scan</span>
+                        </button>
+                    </div>
+                    <div class="ad-panel-body">
+                        <div class="ad-row">
+                            <div class="ad-field ad-grow">
+                                <label for="ad-subnets" translatable="yes">Subnets (comma-separated)</label>
+                                <input id="ad-subnets" type="text">
+                            </div>
+                            <div class="ad-field ad-narrow">
+                                <label for="ad-port" translatable="yes">SSH port</label>
+                                <input id="ad-port" type="number" value="22">
+                            </div>
+                        </div>
+                        <div id="ad-scan-status" class="ad-muted"></div>
+                        <div class="ad-table-wrap">
+                            <table class="ad-table">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" id="ad-sel-all" title="select all"></th>
+                                        <th translatable="yes">IP</th>
+                                        <th translatable="yes">SSH banner</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ad-host-rows"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ad-panel">
+                    <div class="ad-panel-head">
+                        <span translatable="yes">Credentials</span>
+                    </div>
+                    <div class="ad-panel-body">
+                        <p class="ad-muted" translatable="yes">
+                            Defaults come from the kickstart baseline. Leave the
+                            password empty to use SSH key auth on this host.
+                        </p>
+                        <div class="ad-row">
+                            <div class="ad-field ad-grow">
+                                <label for="ad-cred-user" translatable="yes">SSH user</label>
+                                <input id="ad-cred-user" type="text" autocomplete="off">
+                            </div>
+                            <div class="ad-field ad-narrow">
+                                <label for="ad-cred-port" translatable="yes">Port</label>
+                                <input id="ad-cred-port" type="number" value="22">
+                            </div>
+                        </div>
+                        <div class="ad-field">
+                            <label for="ad-cred-pass" translatable="yes">Password (blank = key auth)</label>
+                            <input id="ad-cred-pass" type="password" autocomplete="off">
+                        </div>
+                        <div class="ad-field">
+                            <label for="ad-cred-sudo" translatable="yes">Sudo password (if it differs)</label>
+                            <input id="ad-cred-sudo" type="password" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ad-col">
+                <div class="ad-panel">
+                    <div class="ad-panel-head">
+                        <span translatable="yes">Playbooks &amp; tasks</span>
+                        <button id="ad-btn-refresh" class="pf-v6-c-button pf-m-plain">
+                            <span class="pf-v6-button-icon" aria-hidden="true">⟳</span>
+                            <span translatable="yes">Refresh</span>
+                        </button>
+                    </div>
+                    <div class="ad-panel-body">
+                        <input id="ad-pb-filter" type="text"
+                               placeholder="filter by name / STIG id…">
+                        <div id="ad-pb-list"></div>
+                        <p id="ad-pb-hint" class="ad-muted"></p>
+                    </div>
+                </div>
+
+                <div class="ad-panel ad-deploy-bar">
+                    <span id="ad-sel-counts" class="ad-muted"></span>
+                    <button id="ad-btn-deploy" class="pf-v6-c-button pf-m-primary" disabled>
+                        <span class="pf-v6-button-icon" aria-hidden="true">▶</span>
+                        <span translatable="yes">Deploy</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="ad-job-panel" class="ad-panel ad-hidden">
+            <div class="ad-panel-head">
+                <span><span translatable="yes">Deployment</span> <span id="ad-job-id"></span>
+                    <span id="ad-job-status" class="ad-badge ad-running">running</span></span>
+                <span>
+                    <button id="ad-btn-cancel" class="pf-v6-c-button pf-m-plain">
+                        <span translatable="yes">Stop</span>
+                    </button>
+                    <button id="ad-btn-close-job" class="pf-v6-c-button pf-m-plain">
+                        <span translatable="yes">Close</span>
+                    </button>
+                </span>
+            </div>
+            <div class="ad-panel-body">
+                <div id="ad-job-meta" class="ad-muted"></div>
+                <pre id="ad-job-log" class="ad-log"></pre>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

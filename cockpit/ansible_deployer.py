@@ -1,0 +1,278 @@
+#!/usr/bin/env python3
+"""
+ansible_deployer.py — root controller for the Cockpit "Ansible Deployer" module.
+
+Invoked from the module frontend via cockpit.spawn(); subcommands:
+
+  scan       --subnets CIDR[,CIDR] [--port N] [--timeout S]
+             concurrent SSH-banner scan, prints JSON array [{ip, banner}]
+
+  playbooks  --dirs DIR[,DIR]
+             read-only walk + classify of playbooks/tasks, prints JSON array
+
+  deploy     --hosts IP[,IP] --user USER [--port N] --target PLAYBOOK
+             [--key PATH]
+             Password (if any) is read from env DEPLOYER_SSH_PASSWORD,
+             sudo password from env DEPLOYER_SUDO_PASSWORD (never argv).
+             Writes a per-deployment inventory, runs `ansible -m ping`
+             preflight, then `ansible-playbook` (bare task files are
+             auto-wrapped). All ansible output streams to stdout.
+             Exits with ansible's exit code.
+"""
+import argparse
+import concurrent.futures
+import ipaddress
+import json
+import os
+import re
+import shutil
+import socket
+import subprocess
+import sys
+import tempfile
+import time
+
+CONFIG_PATH = os.environ.get("ANSIBLE_DEPLOYER_CONFIG",
+                             "/etc/ansible-deployer/config.json")
+
+DEFAULTS = {
+    "scan_subnets": ["10.10.10.0/24"],
+    "scan_port": 22,
+    "scan_timeout_s": 2.5,
+    "playbook_dirs": ["/opt/ansible-playbooks", "/opt/SHIBA-24"],
+    "default_creds": {"user": "agent", "password": "", "sudo_password": "",
+                      "port": 22},
+}
+
+
+def load_config():
+    try:
+        with open(CONFIG_PATH) as f:
+            cfg = json.load(f)
+    except OSError:
+        return DEFAULTS
+    merged = json.loads(json.dumps(DEFAULTS))
+    merged.update(cfg)
+    merged.setdefault("default_creds", DEFAULTS["default_creds"])
+    return merged
+
+
+# ---------------------------------------------------------------------------
+# scan
+# ---------------------------------------------------------------------------
+
+def ssh_banner(ip, port, timeout):
+    try:
+        with socket.create_connection((ip, port), timeout=timeout) as s:
+            return s.recv(256).decode(errors="replace").strip() or None
+    except OSError:
+        return None
+
+
+def cmd_scan(args):
+    results = []
+    for net in args.subnets:
+        try:
+            net_obj = ipaddress.ip_network(net, strict=False)
+            hosts = [str(h) for h in net_obj.hosts() if h.version == 4]
+        except ValueError:
+            continue
+        with concurrent.futures.ThreadPoolExecutor(
+                max_workers=min(len(hosts), 256)) as pool:
+            futs = {pool.submit(ssh_banner, h, args.port, args.timeout): h
+                    for h in hosts}
+            for fut in concurrent.futures.as_completed(futs):
+                h = futs[fut]
+                banner = fut.result()
+                if banner:
+                    results.append({"ip": h, "ssh_banner": banner})
+    results.sort(key=lambda r: [int(x) for x in r["ip"].split(".")])
+    print(json.dumps(results))
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# playbooks
+# ---------------------------------------------------------------------------
+
+import yaml  # noqa: E402
+
+
+def summarize_playbook(path):
+    try:
+        with open(path) as f:
+            text = f.read()
+    except OSError:
+        return {"id": os.path.basename(path), "path": path, "source_dir": "error",
+                "type": "unknown", "plays": [], "stig_ids": [], "needs_wrap": False}
+
+    source_dir = os.path.dirname(path)
+    plays = []
+    try:
+        parsed = yaml.safe_load(text)
+    except yaml.YAMLError:
+        parsed = None
+
+    if isinstance(parsed, list) and parsed:
+        if any(isinstance(p, dict) and "hosts" in p for p in parsed):
+            for item in parsed:
+                if isinstance(item, dict):
+                    tags = item.get("tags") or []
+                    plays.append({"id": tags[-1] if tags else "play",
+                                  "name": str(item.get("name", "play")),
+                                  "hosts": str(item.get("hosts", "")),
+                                  "tags": tags})
+        elif all(isinstance(p, dict) and "name" in p for p in parsed):
+            for item in parsed:
+                tags = item.get("tags") or []
+                plays.append({"id": tags[-1] if tags else "task",
+                              "name": str(item["name"]), "hosts": "", "tags": tags})
+
+    if not plays:
+        m = re.search(r"STIG ID:\s*(\S+)", text)
+        if m:
+            plays.append({"id": m.group(1), "name": m.group(1), "hosts": "",
+                          "tags": []})
+
+    ptype = ("playbook" if any(p["hosts"] for p in plays)
+             else ("task" if plays else "other"))
+    stigs = sorted(set(re.findall(r"UBTU[-_]24[-_]?\d*", text)))[:50]
+    return {"id": os.path.basename(path), "path": path, "source_dir": source_dir,
+            "type": ptype, "plays": plays, "stig_ids": stigs,
+            "needs_wrap": ptype == "task"}
+
+
+def cmd_playbooks(args):
+    out = []
+    for base in args.dirs:
+        if not os.path.isdir(base):
+            continue
+        for root, _dirs, files in os.walk(base):
+            for fn in sorted(files):
+                if fn.endswith((".yml", ".yaml")) and not fn.startswith("__deployer_job_"):
+                    out.append(summarize_playbook(os.path.join(root, fn)))
+    out.sort(key=lambda p: (p["source_dir"], p["id"]))
+    print(json.dumps(out))
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# deploy
+# ---------------------------------------------------------------------------
+
+def stream_proc(cmd, env, timeout=None):
+    """Run cmd, pipe stdout/stderr straight to our stdout. Returns exit code."""
+    p = subprocess.Popen(cmd, env=env, stdin=subprocess.DEVNULL,
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    try:
+        for line in iter(p.stdout.readline, b""):
+            sys.stdout.write(line.decode(errors="replace"))
+            sys.stdout.flush()
+        p.stdout.close()
+        rc = p.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        p.kill()
+        p.wait()
+        rc = 124
+    return rc
+
+
+def cmd_deploy(args):
+    cfg = load_config()
+    user = args.user
+    port = args.port or 22
+    target = args.target
+    if not os.path.exists(target):
+        sys.stderr.write("target does not exist: %s\n" % target)
+        return 2
+
+    password = os.environ.get("DEPLOYER_SSH_PASSWORD", "")
+    sudo_password = os.environ.get("DEPLOYER_SUDO_PASSWORD", "")
+
+    env = dict(os.environ,
+               ANSIBLE_HOST_KEY_CHECKING="False",
+               ANSIBLE_DEPRECATION_WARNINGS="False")
+    ssh_args = "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+    key = args.key or os.path.expanduser("~/.ssh/id_ed25519")
+    if os.path.exists(key):
+        ssh_args += " -i %s" % key
+    env["ANSIBLE_SSH_ARGS"] = ssh_args
+    if password:
+        env["ANSIBLE_SSH_PASS"] = password
+    if sudo_password:
+        env["ANSIBLE_BECOME_PASS"] = sudo_password
+
+    inv_dir = tempfile.mkdtemp(prefix="ansible-deployer-", dir="/var/tmp")
+    inventory_path = os.path.join(inv_dir, "inventory.ini")
+    hosts = sorted(set(args.hosts.split(",")))
+    with open(inventory_path, "w") as f:
+        f.write("[targets]\n")
+        for h in hosts:
+            f.write("%s ansible_port=%s ansible_user=%s\n" % (h, port, user))
+
+    print("[deployer] targets: %s (user=%s port=%d auth=%s)\n"
+          % (", ".join(hosts), user, port,
+             "password" if password else "ssh-key"))
+
+    # bare task file -> thin wrapper playbook
+    info = summarize_playbook(target)
+    run_target = target
+    if info["needs_wrap"]:
+        tdir, tname = os.path.dirname(target), os.path.basename(target)
+        wrapper = os.path.join(tdir, "__deployer_job_%d.yml" % os.getpid())
+        with open(wrapper, "w") as f:
+            f.write("# generated by ansible-deployer cockpit module — safe to delete\n")
+            f.write("- name: Deployer job (wrapper)\n  hosts: all\n  become: yes\n")
+            f.write("  tasks:\n    - name: Include STIG task %s\n" % tname)
+            f.write("      ansible.builtin.include_tasks: %s\n" % tname)
+        run_target = wrapper
+        print("[deployer] task file detected — wrapped as %s\n" % wrapper)
+
+    # preflight
+    print("[deployer] preflight: ansible -m ping")
+    rc = stream_proc(["ansible", "-i", inventory_path, "all", "-m", "ping", "-o"],
+                     env, timeout=300)
+    if rc != 0:
+        print("\n[deployer] preflight FAILED — connectivity check did not "
+              "succeed. Aborting before running the playbook.")
+        return rc
+
+    # main run
+    print("[deployer] running: ansible-playbook %s\n" % run_target)
+    rc = stream_proc(["ansible-playbook", "-i", inventory_path, run_target], env)
+    print("\n[deployer] ansible-playbook exit code: %d" % rc)
+    return rc
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p = sub.add_parser("scan")
+    p.add_argument("--subnets", required=True)
+    p.add_argument("--port", type=int, default=22)
+    p.add_argument("--timeout", type=float, default=2.5)
+    p.set_defaults(fn=cmd_scan)
+
+    p = sub.add_parser("playbooks")
+    p.add_argument("--dirs", required=True)
+    p.set_defaults(fn=cmd_playbooks)
+
+    p = sub.add_parser("deploy")
+    p.add_argument("--hosts", required=True)
+    p.add_argument("--user", required=True)
+    p.add_argument("--port", type=int, default=0)
+    p.add_argument("--target", required=True)
+    p.add_argument("--key", default="")
+    p.set_defaults(fn=cmd_deploy)
+
+    args = ap.parse_args()
+    if args.cmd == "scan":
+        args.subnets = [s.strip() for s in args.subnets.split(",") if s.strip()]
+    if args.cmd == "playbooks":
+        args.dirs = [d.strip() for d in args.dirs.split(",") if d.strip()]
+    sys.exit(args.fn(args))
+
+
+if __name__ == "__main__":
+    main()

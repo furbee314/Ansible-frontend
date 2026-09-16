@@ -1,0 +1,19 @@
+{
+    "menu": {
+        "index": {
+            "label": "Ansible Deployer",
+            "order": 30,
+            "docs": [
+                {
+                    "label": "Ansible Deployer",
+                    "url": "https://github.com/furbee314/Ansible-frontend"
+                }
+            ],
+            "keywords": [
+                {
+                    "matches": ["ansible", "deploy", "playbook", "stig", "host", "network", "scan"]
+                }
+            ]
+        }
+    }
+}
