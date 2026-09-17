@@ -1,0 +1,17 @@
+---
+# Sample STIG-style BARE TASK FILE.
+# This has no play wrapper (no hosts: / tasks: at play level) - the deployer
+# detects this and auto-generates a wrapper playbook on the fly, same as it
+# does for /opt/SHIBA-24/tasks/UBTU_24_*.yml files.
+#
+# It also uses become: yes, so running it demonstrates the sudo/sudo-password
+# requirement that real STIG tasks have (the 'agent' user needs a sudo
+# password for privileged tasks).
+- name: Verify sshd service is running (sample STIG-style task)
+  become: yes
+  ansible.builtin.service:
+    name: sshd
+    state: started
+  tags:
+    - sample
+    - sshd

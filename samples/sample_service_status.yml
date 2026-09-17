@@ -1,0 +1,25 @@
+---
+# Sample: service status. Checks a few services and reports their state.
+# Safe to run - read-only (no service restarts).
+- name: Sample - Service Status
+  hosts: all
+  vars:
+    services_to_check:
+      - sshd
+      - firewalld
+      - chronyd
+  tasks:
+    - name: Check service states
+      service_facts:
+
+    - name: Report each service
+      debug:
+        msg: >-
+          {{ item }}:
+          {{ ansible_facts.services.get(item, {}).state | default('not running') }}
+          (enabled={{ ansible_facts.services.get(item, {}).enabled | default('no') }})
+      loop: "{{ services_to_check }}"
+
+    - name: Summary
+      debug:
+        msg: "Service check finished on {{ inventory_hostname }}."

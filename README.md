@@ -81,3 +81,19 @@ bundle (self-contained: no build step required). It can be regenerated with
   `__deployer_job_`); neither is kept after the run in any meaningful way —
   clean up `/var/tmp` periodically if that matters.
 - Don't put secrets in playbook `debug` output — it streams to the UI.
+
+## Sample playbooks
+
+`samples/` contains demo playbooks to try the UI with. Copy them into a
+`playbook_dirs` directory on the target before deploying:
+
+```
+sudo cp samples/*.yml /opt/ansible-playbooks/
+```
+
+| File | What it does | Privileges |
+|---|---|---|
+| `sample_system_report.yml` | Prints OS/kernel/CPU/memory/date facts | none |
+| `sample_service_status.yml` | Reports sshd/firewalld/chronyd state | none |
+| `sample_marker_write.yml` | Writes a marker file to `/tmp` | none |
+| `sample_stig_style_task.yml` | Bare STIG-style task file (auto-wrapped, `become: yes`) | sudo required |

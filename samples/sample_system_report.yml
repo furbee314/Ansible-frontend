@@ -1,0 +1,24 @@
+---
+# Sample: system report. Gathers basic facts and prints a summary.
+# Safe to run - read-only.
+- name: Sample - System Report
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Show host summary
+      debug:
+        msg: >-
+          {{ inventory_hostname }}: {{ ansible_distribution }}
+          {{ ansible_distribution_version }} (kernel {{ ansible_kernel }}),
+          {{ ansible_architecture }}, {{ ansible_virtualization_type | default('physical') }},
+          {{ ansible_date_time.iso8601 }}
+
+    - name: Show CPU and memory
+      debug:
+        msg: >-
+          {{ ansible_processor_vcpus }} vCPU,
+          {{ ansible_memtotal_mb }} MB total memory
+
+    - name: Show date/time
+      debug:
+        msg: "Target time: {{ ansible_date_time.iso8601 }} ({{ ansible_date_time.date }}, {{ ansible_date_time.time }})"
