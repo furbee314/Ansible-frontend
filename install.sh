@@ -28,7 +28,7 @@ do_install() {
 
     echo ">> installing module to $DEST"
     install -d "$DEST" "$CFG_DIR"
-    for f in index.html manifest.json po.js ansible-deployer.css ansible-deployer.js ansible_deployer.py; do
+    for f in index.html manifest.json po.js ansible-deployer.css ansible-deployer.js ansible_deployer.py patternfly.css; do
         install -m 0644 "$HERE/cockpit/$f" "$DEST/$f"
     done
     install -m 0755 "$HERE/cockpit/ansible_deployer.py" "$DEST/ansible_deployer.py"

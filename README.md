@@ -66,6 +66,10 @@ install.sh          # install / uninstall / test
 tests/              # controller smoke test
 ```
 
+`cockpit/patternfly.css` is a vendored copy of the official PatternFly v6
+bundle (self-contained: no build step required). It can be regenerated with
+`cockpit/build.sh` (npm, optional) if you want to track a different PF version.
+
 ## Security notes
 
 - Runs inside Cockpit's auth (your server login; root actions via

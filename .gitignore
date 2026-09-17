@@ -5,3 +5,4 @@ jobs/*
 # generated wrapper playbooks (created next to task files, auto-cleaned)
 __deployer_job_*.yml
 src/
+src/ # build workspace (not shipped)

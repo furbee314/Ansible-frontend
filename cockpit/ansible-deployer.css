@@ -1,99 +1,210 @@
-/* Ansible Deployer — Cockpit module (self-contained styling) */
+/* SPDX-License-Identifier: MIT
+ * Ansible Deployer — Cockpit module (layout + component tweak layer).
+ *
+ * The PatternFly component bundle is loaded separately as patternfly.css.
+ * This file only handles:
+ *   - page scaffolding / two-column layout
+ *   - spacing that PF defaults don't give us
+ *   - muted text, badges, log view, host-table row hover
+ * It references only PatternFly v6 theme tokens that are confirmed to exist in
+ * the bundled patternfly.css (verified against @patternfly/patternfly 6.6.1).
+ */
 
-#ad-app {
-    --ad-bg: var(--pf-v6--global--background--color--default, #151515);
-    --ad-panel: var(--pf-v6--global--background--color--secondary, #1b1b1b);
-    --ad-border: var(--pf-v6--global--border--color--default, #3c3f42);
-    --ad-text: var(--pf-v6--global--text--color--default, #ffffff);
-    --ad-dim: var(--pf-v6--global--text--color--subtle, #a8a8a8);
-    --ad-accent: var(--pf-v6--global--primary--color--100, #712bef);
-    --ad-ok: var(--pf-v6--global--success--color--100, #48c77e);
-    --ad-err: var(--pf-v6--global--danger--color--100, #cc005d);
-
-    font-family: var(--pf-v6--global--font-family, "RedHatText", sans-serif);
-    color: var(--ad-text);
-    padding: 0 2rem 2rem;
+:root {
+    --ad-muted: var(--pf-t--global--text--color--subtle, #8a8d8f);
+    --ad-panel: var(--pf-t--global--background--color--secondary--default, #292929);
+    --ad-panel-alt: var(--pf-t--global--background--color--tertiary--default, #1f1f1f);
+    --ad-border: var(--pf-t--global--border--color--default, #3c3f42);
+    --ad-font: var(--pf-t--global--font--size--body--default, 14px);
 }
 
-/* header */
-.ad-header { display: flex; align-items: baseline; gap: 1rem;
-    padding: 1.25rem 0 1rem; border-bottom: 1px solid var(--ad-border); }
-.ad-header-title { font-size: 1.25rem; font-weight: 700; }
-.ad-header-sub { color: var(--ad-dim); font-size: .85rem; }
+/* ---- page scaffolding --------------------------------------------- */
+#ad-app {
+    font-size: var(--ad-font);
+    display: flex;
+    flex-direction: column;
+    gap: var(--pf-t--global--spacer--md, 16px);
+    padding: var(--pf-t--global--spacer--lg, 24px);
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
 
-/* layout */
-.ad-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 1rem; margin-top: 1rem; align-items: start; }
-@media (max-width: 900px) { .ad-main { grid-template-columns: 1fr; } }
-.ad-col { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.ad-masthead {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+.ad-masthead-title {
+    font-size: var(--pf-t--global--font--size--xl, 24px);
+    font-weight: 700;
+}
+.ad-masthead-sub {
+    color: var(--ad-muted);
+    font-size: var(--pf-t--global--font--size--sm, 14px);
+}
 
-/* panels */
-.ad-panel { background: var(--ad-panel); border: 1px solid var(--ad-border);
-    border-radius: 6px; }
-.ad-panel-head { display: flex; justify-content: space-between; align-items: center;
-    padding: .6rem .9rem; border-bottom: 1px solid var(--ad-border);
-    font-size: .8rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .05em; color: var(--ad-dim); }
-.ad-panel-body { padding: .9rem; }
+/* ---- two-column main grid ---------------------------------------- */
+.ad-main {
+    display: grid;
+    grid-template-columns: minmax(320px, 5fr) minmax(360px, 7fr);
+    gap: var(--pf-t--global--spacer--lg, 24px);
+    align-items: start;
+}
+.ad-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pf-t--global--spacer--md, 16px);
+}
 
-/* fields */
-.ad-row { display: flex; gap: .75rem; margin-bottom: .5rem; }
-.ad-field { margin-bottom: .6rem; display: flex; flex-direction: column; }
-.ad-field.ad-grow { flex: 1; }
-.ad-field.ad-narrow { flex: 0 0 6rem; }
-.ad-field label { font-size: .75rem; color: var(--ad-dim); margin-bottom: .25rem; }
-.ad-field input { width: 100%; padding: .45rem .6rem; font: inherit;
-    background: var(--ad-bg); color: var(--ad-text);
-    border: 1px solid var(--ad-border); border-radius: 4px; }
-.ad-field input:focus { outline: 1px solid var(--ad-accent); }
-#ad-pb-filter { width: 100%; padding: .45rem .6rem; font: inherit;
-    background: var(--ad-bg); color: var(--ad-text);
-    border: 1px solid var(--ad-border); border-radius: 4px; margin-bottom: .5rem; }
+@media (max-width: 900px) {
+    .ad-main { grid-template-columns: 1fr; }
+}
 
-/* host table */
-.ad-table-wrap { max-height: 15rem; overflow: auto; margin-top: .5rem; }
-.ad-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
-.ad-table th, .ad-table td { text-align: left; padding: .35rem .5rem;
-    border-bottom: 1px solid var(--ad-border); }
-.ad-table th { color: var(--ad-dim); font-size: .7rem; text-transform: uppercase;
-    position: sticky; top: 0; background: var(--ad-panel); }
-.ad-table tr.sel td { background: color-mix(in srgb, var(--ad-ok) 15%, transparent); }
-.ad-table .ad-ip { font-weight: 600; }
+/* ---- card / panel spacing ----------------------------------------- */
+.ad-panel .pf-v6-c-card__header,
+.ad-panel .pf-v6-c-card__body {
+    padding-inline: var(--pf-t--global--spacer--lg, 24px);
+    padding-block: var(--pf-t--global--spacer--md, 16px);
+}
+.ad-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
 
-/* playbook list */
-#ad-pb-list { max-height: 20rem; overflow: auto; margin-bottom: .5rem; }
-.ad-play { display: flex; align-items: center; gap: .5rem; padding: .4rem .3rem;
-    border-radius: 4px; cursor: pointer; font-size: .85rem; }
-.ad-play:hover { background: var(--ad-bg); }
-.ad-play .ad-name { flex: 1; min-width: 0; overflow: hidden;
-    text-overflow: ellipsis; white-space: nowrap; }
-.ad-play .ad-dir { color: var(--ad-dim); font-size: .7rem; }
+/* ---- form rows ---------------------------------------------------- */
+.ad-row {
+    display: flex;
+    gap: var(--pf-t--global--spacer--md, 16px);
+    align-items: flex-end;
+    margin-bottom: var(--pf-t--global--spacer--sm, 8px);
+}
+.ad-row > .pf-v6-c-form:first-child { flex: 1 1 auto; }
+.ad-narrow { flex: 0 0 110px; }
+.ad-row .pf-v6-c-form__label { margin-bottom: 4px; }
 
-/* badges */
-.ad-badge { display: inline-block; padding: 0 .5rem; border-radius: 9px;
-    font-size: .68rem; border: 1px solid var(--ad-border); vertical-align: middle; }
-.ad-badge.ad-task { color: var(--pf-v6--global--warning--color--100, #b58a00);
-    border-color: currentColor; }
-.ad-badge.ad-playbook { color: var(--ad-ok); border-color: currentColor; }
-.ad-badge.ad-success { background: var(--ad-ok); color: #fff; border-color: var(--ad-ok); }
-.ad-badge.ad-error { background: var(--ad-err); color: #fff; border-color: var(--ad-err); }
-.ad-badge.ad-running { background: var(--ad-accent); color: #fff;
-    border-color: var(--ad-accent); animation: ad-pulse 1.5s infinite; }
-.ad-badge.ad-cancelled { color: var(--ad-dim); }
-@keyframes ad-pulse { 50% { opacity: .55; } }
+.ad-field, .pf-v6-c-form { margin-bottom: var(--pf-t--global--spacer--sm, 8px); }
 
-/* deploy bar + log */
-.ad-deploy-bar { display: flex; justify-content: space-between; align-items: center;
-    padding: .7rem .9rem; }
-#ad-job-log { background: var(--ad-bg); border: 1px solid var(--ad-border);
-    border-radius: 4px; padding: .8rem; min-height: 12rem; max-height: 24rem;
-    overflow: auto; font-size: .78rem; white-space: pre-wrap;
-    word-break: break-word; margin: 0 0 .5rem; }
-#ad-job-panel { margin-top: 1rem; }
-.ad-hidden { display: none !important; }
-.ad-muted { color: var(--ad-dim); font-size: .78rem; }
-.ad-spinner { display: inline-block; width: .8rem; height: .8rem;
-    border: 2px solid var(--ad-dim); border-top-color: var(--ad-accent);
-    border-radius: 50%; animation: ad-spin .8s linear infinite;
-    vertical-align: -2px; margin-right: .4rem; }
+/* ---- host table --------------------------------------------------- */
+.ad-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--ad-border);
+    border-radius: 4px;
+}
+.ad-check-col { width: 34px; }
+#ad-host-rows .pf-v6-c-table__tr {
+    cursor: default;
+}
+#ad-host-rows .pf-v6-c-table__tr.sel {
+    background-color: color-mix(in srgb,
+        var(--pf-t--global--background--color--primary--default, #000000) 85%,
+        var(--pf-t--global--brand--color--default, #06c) 15%);
+}
+.ad-ip { font-weight: 600; }
+
+/* ---- muted / hint text ------------------------------------------- */
+.ad-muted, .pf-v6-u-text-subtle {
+    color: var(--ad-muted);
+    font-size: var(--pf-t--global--font--size--sm, 14px);
+}
+
+/* ---- playbook list ------------------------------------------------ */
+.ad-pb-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 560px;
+    overflow-y: auto;
+    padding: 2px;
+}
+.ad-play {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.ad-play:hover {
+    background-color: var(--pf-t--global--background--color--action--plain--hover,
+        rgba(255,255,255,0.08));
+}
+.ad-play input { margin: 0; }
+.ad-name { flex: 1 1 auto; }
+.ad-dir {
+    color: var(--ad-muted);
+    font-size: var(--pf-t--global--font--size--xs, 12px);
+    white-space: nowrap;
+}
+
+/* ---- badges ------------------------------------------------------- */
+.ad-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: var(--pf-t--global--font--size--xs, 12px);
+    font-weight: 600;
+    line-height: 1.5;
+}
+.ad-badge.ad-playbook { color: var(--pf-t--global--text--color--status--success--default, #37a240); }
+.ad-badge.ad-task     { color: var(--pf-t--global--text--color--status--warning--default, #f8a548); }
+.ad-badge.ad-running  { color: var(--pf-t--global--text--color--status--info--default, #73bcf7); }
+.ad-badge.ad-success  { color: var(--pf-t--global--text--color--status--success--default, #37a240); }
+.ad-badge.ad-error,
+.ad-badge.ad-cancelled{ color: var(--pf-t--global--text--color--status--danger--default, #c9190b); }
+
+/* ---- deploy bar --------------------------------------------------- */
+.ad-deploy-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: var(--ad-panel-alt);
+    border: 1px solid var(--ad-border);
+    border-radius: 6px;
+    padding: 10px 14px;
+}
+.ad-deploy-bar .pf-v6-c-button { min-width: 120px; }
+
+/* ---- job log ------------------------------------------------------ */
+.ad-log {
+    margin: 0;
+    padding: 12px;
+    background: #000;
+    color: #d5d8dc;
+    border-radius: 4px;
+    font-family: "RedHatMono", monospace;
+    font-size: 13px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+/* ---- spinner (inline status) ------------------------------------- */
+.ad-spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    margin-right: 8px;
+    border: 2px solid var(--ad-muted);
+    border-top-color: transparent;
+    border-radius: 50%;
+    vertical-align: -2px;
+    animation: ad-spin .7s linear infinite;
+}
 @keyframes ad-spin { to { transform: rotate(360deg); } }
+
+.ad-hidden { display: none !important; }
+
+/* ---- screen reader only ------------------------------------------- */
+.ad-sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    border: 0;
+}

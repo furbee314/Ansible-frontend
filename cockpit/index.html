@@ -3,12 +3,13 @@
 Ansible Deployer — Cockpit module
 MIT License, see LICENSE in the repository root.
 -->
-<html id="ansible-deployer-page" lang="en">
+<html id="ansible-deployer-page" class="pf-v6-theme-dark" lang="en">
 <head>
     <title translatable="yes">Ansible Deployer</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <link rel="stylesheet" href="patternfly.css">
     <link rel="stylesheet" href="ansible-deployer.css">
 
     <script type="text/javascript" src="../base1/cockpit.js"></script>
@@ -19,126 +20,154 @@ MIT License, see LICENSE in the repository root.
 
 <body class="pf-v6-m-tabular-nums">
     <div id="ad-app">
-        <div class="ad-header">
-            <span class="ad-header-title" translatable="yes">Ansible Deployer</span>
-            <span class="ad-header-sub" translatable="yes">
+        <div class="ad-masthead">
+            <span class="ad-masthead-title" translatable="yes">Ansible Deployer</span>
+            <span class="ad-masthead-sub" translatable="yes">
                 Pick network hosts, pick a playbook, deploy.
             </span>
         </div>
 
         <div class="ad-main">
+            <!-- LEFT COLUMN: hosts + credentials -->
             <div class="ad-col">
-                <div class="ad-panel">
-                    <div class="ad-panel-head">
-                        <span translatable="yes">Network hosts</span>
-                        <button id="ad-btn-scan" class="pf-v6-c-button pf-m-plain">
-                            <span class="pf-v6-button-icon" aria-hidden="true">⟳</span>
-                            <span translatable="yes">Scan</span>
+                <section class="pf-v6-c-card ad-panel">
+                    <div class="pf-v6-c-card__header ad-panel-head">
+                        <div class="pf-v6-c-card__title-text" translatable="yes">Network hosts</div>
+                        <button id="ad-btn-scan" type="button" class="pf-v6-c-button pf-m-plain">
+                            <span class="pf-v6-c-button__icon" aria-hidden="true">⟳</span>
+                            <span class="pf-v6-c-button__text" translatable="yes">Scan</span>
                         </button>
                     </div>
-                    <div class="ad-panel-body">
+                    <div class="pf-v6-c-card__body">
                         <div class="ad-row">
-                            <div class="ad-field ad-grow">
-                                <label for="ad-subnets" translatable="yes">Subnets (comma-separated)</label>
-                                <input id="ad-subnets" type="text">
+                            <div class="pf-v6-c-form ad-grow">
+                                <label class="pf-v6-c-form__label" for="ad-subnets">
+                                    <span class="pf-v6-c-form__label-text" translatable="yes">Subnets (comma-separated)</span>
+                                </label>
+                                <input class="pf-v6-c-form-control" id="ad-subnets" type="text">
                             </div>
-                            <div class="ad-field ad-narrow">
-                                <label for="ad-port" translatable="yes">SSH port</label>
-                                <input id="ad-port" type="number" value="22">
+                            <div class="pf-v6-c-form ad-narrow">
+                                <label class="pf-v6-c-form__label" for="ad-port">
+                                    <span class="pf-v6-c-form__label-text" translatable="yes">SSH port</span>
+                                </label>
+                                <input class="pf-v6-c-form-control" id="ad-port" type="number" value="22">
                             </div>
                         </div>
                         <div id="ad-scan-status" class="ad-muted"></div>
                         <div class="ad-table-wrap">
-                            <table class="ad-table">
-                                <thead>
-                                    <tr>
-                                        <th><input type="checkbox" id="ad-sel-all" title="select all"></th>
-                                        <th translatable="yes">IP</th>
-                                        <th translatable="yes">SSH banner</th>
+                            <table class="pf-v6-c-table">
+                                <thead class="pf-v6-c-table__thead">
+                                    <tr class="pf-v6-c-table__tr">
+                                        <th class="pf-v6-c-table__th ad-check-col">
+                                            <div class="pf-v6-c-check">
+                                                <input type="checkbox" class="pf-v6-c-check__input" id="ad-sel-all" aria-label="select all">
+                                                <label class="pf-v6-c-check__label" for="ad-sel-all"></label>
+                                            </div>
+                                        </th>
+                                        <th class="pf-v6-c-table__th" translatable="yes">IP</th>
+                                        <th class="pf-v6-c-table__th" translatable="yes">SSH banner</th>
                                     </tr>
                                 </thead>
-                                <tbody id="ad-host-rows"></tbody>
+                                <tbody class="pf-v6-c-table__tbody" id="ad-host-rows"></tbody>
                             </table>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <div class="ad-panel">
-                    <div class="ad-panel-head">
-                        <span translatable="yes">Credentials</span>
+                <section class="pf-v6-c-card ad-panel">
+                    <div class="pf-v6-c-card__header">
+                        <div class="pf-v6-c-card__title-text" translatable="yes">Credentials</div>
                     </div>
-                    <div class="ad-panel-body">
+                    <div class="pf-v6-c-card__body">
                         <p class="ad-muted" translatable="yes">
                             Defaults come from the kickstart baseline. Leave the
                             password empty to use SSH key auth on this host.
                         </p>
                         <div class="ad-row">
-                            <div class="ad-field ad-grow">
-                                <label for="ad-cred-user" translatable="yes">SSH user</label>
-                                <input id="ad-cred-user" type="text" autocomplete="off">
+                            <div class="pf-v6-c-form ad-grow">
+                                <label class="pf-v6-c-form__label" for="ad-cred-user">
+                                    <span class="pf-v6-c-form__label-text" translatable="yes">SSH user</span>
+                                </label>
+                                <input class="pf-v6-c-form-control" id="ad-cred-user" type="text" autocomplete="off">
                             </div>
-                            <div class="ad-field ad-narrow">
-                                <label for="ad-cred-port" translatable="yes">Port</label>
-                                <input id="ad-cred-port" type="number" value="22">
+                            <div class="pf-v6-c-form ad-narrow">
+                                <label class="pf-v6-c-form__label" for="ad-cred-port">
+                                    <span class="pf-v6-c-form__label-text" translatable="yes">Port</span>
+                                </label>
+                                <input class="pf-v6-c-form-control" id="ad-cred-port" type="number" value="22">
                             </div>
                         </div>
-                        <div class="ad-field">
-                            <label for="ad-cred-pass" translatable="yes">Password (blank = key auth)</label>
-                            <input id="ad-cred-pass" type="password" autocomplete="off">
+                        <div class="pf-v6-c-form">
+                            <label class="pf-v6-c-form__label" for="ad-cred-pass">
+                                <span class="pf-v6-c-form__label-text" translatable="yes">Password (blank = key auth)</span>
+                            </label>
+                            <input class="pf-v6-c-form-control" id="ad-cred-pass" type="password" autocomplete="off">
                         </div>
-                        <div class="ad-field">
-                            <label for="ad-cred-sudo" translatable="yes">Sudo password (if it differs)</label>
-                            <input id="ad-cred-sudo" type="password" autocomplete="off">
+                        <div class="pf-v6-c-form">
+                            <label class="pf-v6-c-form__label" for="ad-cred-sudo">
+                                <span class="pf-v6-c-form__label-text" translatable="yes">Sudo password (if it differs)</span>
+                            </label>
+                            <input class="pf-v6-c-form-control" id="ad-cred-sudo" type="password" autocomplete="off">
                         </div>
                     </div>
-                </div>
+                </section>
             </div>
 
+            <!-- RIGHT COLUMN: playbooks + deploy -->
             <div class="ad-col">
-                <div class="ad-panel">
-                    <div class="ad-panel-head">
-                        <span translatable="yes">Playbooks &amp; tasks</span>
-                        <button id="ad-btn-refresh" class="pf-v6-c-button pf-m-plain">
-                            <span class="pf-v6-button-icon" aria-hidden="true">⟳</span>
-                            <span translatable="yes">Refresh</span>
+                <section class="pf-v6-c-card ad-panel">
+                    <div class="pf-v6-c-card__header ad-panel-head">
+                        <div class="pf-v6-c-card__title-text" translatable="yes">Playbooks &amp; tasks</div>
+                        <button id="ad-btn-refresh" type="button" class="pf-v6-c-button pf-m-plain">
+                            <span class="pf-v6-c-button__icon" aria-hidden="true">⟳</span>
+                            <span class="pf-v6-c-button__text" translatable="yes">Refresh</span>
                         </button>
                     </div>
-                    <div class="ad-panel-body">
-                        <input id="ad-pb-filter" type="text"
-                               placeholder="filter by name / STIG id…">
-                        <div id="ad-pb-list"></div>
+                    <div class="pf-v6-c-card__body">
+                        <div class="pf-v6-c-form">
+                            <label class="pf-v6-c-form__label ad-sr-only" for="ad-pb-filter">
+                                <span class="pf-v6-c-form__label-text" translatable="yes">Filter playbooks</span>
+                            </label>
+                            <input class="pf-v6-c-form-control" id="ad-pb-filter" type="text"
+                                   placeholder="filter by name / STIG id…">
+                        </div>
+                        <div id="ad-pb-list" class="ad-pb-list"></div>
                         <p id="ad-pb-hint" class="ad-muted"></p>
                     </div>
-                </div>
+                </section>
 
-                <div class="ad-panel ad-deploy-bar">
+                <div class="ad-deploy-bar">
                     <span id="ad-sel-counts" class="ad-muted"></span>
-                    <button id="ad-btn-deploy" class="pf-v6-c-button pf-m-primary" disabled>
-                        <span class="pf-v6-button-icon" aria-hidden="true">▶</span>
-                        <span translatable="yes">Deploy</span>
+                    <button id="ad-btn-deploy" type="button"
+                            class="pf-v6-c-button pf-m-primary pf-m-block" disabled>
+                        <span class="pf-v6-c-button__icon" aria-hidden="true">▶</span>
+                        <span class="pf-v6-c-button__text" translatable="yes">Deploy</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <div id="ad-job-panel" class="ad-panel ad-hidden">
-            <div class="ad-panel-head">
-                <span><span translatable="yes">Deployment</span> <span id="ad-job-id"></span>
-                    <span id="ad-job-status" class="ad-badge ad-running">running</span></span>
-                <span>
-                    <button id="ad-btn-cancel" class="pf-v6-c-button pf-m-plain">
-                        <span translatable="yes">Stop</span>
+        <!-- JOB PANEL -->
+        <section id="ad-job-panel" class="pf-v6-c-card ad-hidden">
+            <div class="pf-v6-c-card__header ad-panel-head">
+                <div class="pf-v6-c-card__title-text">
+                    <span translatable="yes">Deployment</span> <span id="ad-job-id"></span>
+                    <span id="ad-job-status" class="ad-badge ad-running">running</span>
+                </div>
+                <div class="ad-row">
+                    <button id="ad-btn-cancel" type="button" class="pf-v6-c-button pf-m-plain">
+                        <span class="pf-v6-c-button__text" translatable="yes">Stop</span>
                     </button>
-                    <button id="ad-btn-close-job" class="pf-v6-c-button pf-m-plain">
-                        <span translatable="yes">Close</span>
+                    <button id="ad-btn-close-job" type="button" class="pf-v6-c-button pf-m-plain">
+                        <span class="pf-v6-c-button__text" translatable="yes">Close</span>
                     </button>
-                </span>
+                </div>
             </div>
-            <div class="ad-panel-body">
+            <div class="pf-v6-c-card__body">
                 <div id="ad-job-meta" class="ad-muted"></div>
                 <pre id="ad-job-log" class="ad-log"></pre>
             </div>
-        </div>
+        </section>
     </div>
 </body>
 </html>
