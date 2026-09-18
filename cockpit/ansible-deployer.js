@@ -1,7 +1,10 @@
 /* Ansible Deployer — Cockpit module frontend.
- * All privileged work (scanning, playbook read, ansible execution) happens in
- * ansible_deployer.py via cockpit.spawn({superuser: "require"}); this file
- * only drives the UI.
+ * The module runs as the LOGGED-IN Cockpit user (superuser:false) — no
+ * per-action root prompt. Everything it does (scan, read playbooks, read the
+ * config, run ansible) is readable/runnable by a normal user; target-side
+ * privilege (become/sudo) is handled by the collected sudo password. The one
+ * thing that still needs a secret is the deploy SSH key, so we gate the
+ * Deploy button on the `check` subcommand reporting the key is readable.
  */
 "use strict";
 
@@ -12,6 +15,7 @@
     let HOSTS = [];      // [{ip, banner, checked}]
     let PLAYBOOKS = [];  // [{id, path, type, plays, ...}]
     let job = null;      // {id, promise, closed}
+    let ACCESS = {key_ok: false, key_problem: "", user: ""};  // from `check`
 
     const $ = id => document.getElementById(id);
 
@@ -20,8 +24,9 @@
     /* ------------------------------------------------------------------ */
 
     function spawnJson(args) {
+        // superuser:false — run as the logged-in user, never escalate to root.
         const p = cockpit.spawn(["python3", CTRL].concat(args),
-                                {superuser: "require"});
+                                {superuser: false});
         return p.then(out => JSON.parse(out));
     }
 
@@ -32,10 +37,40 @@
     }
 
     /* ------------------------------------------------------------------ */
+    /* access gate — can this user actually deploy?                      */
+    /* ------------------------------------------------------------------ */
+
+    function updateAccessBanner() {
+        const b = $("ad-access-banner");
+        if (!b) return;
+        if (ACCESS.key_ok) {
+            b.classList.add("ad-hidden");
+            b.textContent = "";
+            return;
+        }
+        b.classList.remove("ad-hidden");
+        const why = ACCESS.key_problem || "no deploy key available to you";
+        b.textContent =
+            cockpit.gettext("Deploy is disabled: $0. Ask an administrator to " +
+                "run 'install.sh' so you are granted a deploy SSH key.")
+                .replace("$0", why);
+    }
+
+    function checkAccess() {
+        spawnJson(["check"])
+            .then(c => { ACCESS = c; updateAccessBanner(); updateCounts(); })
+            .catch(() => {
+                ACCESS = {key_ok: false,
+                          key_problem: "could not check access", user: ""};
+                updateAccessBanner(); updateCounts();
+            });
+    }
+
+    /* ------------------------------------------------------------------ */
     /* config                                                            */
     /* ------------------------------------------------------------------ */
 
-    cockpit.file(CONFIG, {superuser: "require"}).read()
+    cockpit.file(CONFIG, {superuser: false}).read()
         .then(text => {
             const c = JSON.parse(text);
             $("ad-subnets").value = (c.scan_subnets || []).join(", ");
@@ -131,7 +166,7 @@
     async function configDirs() {
         try {
             const c = JSON.parse(
-                await cockpit.file(CONFIG, {superuser: "require"}).read());
+                await cockpit.file(CONFIG, {superuser: false}).read());
             return c.playbook_dirs || [];
         } catch {
             return ["/opt/ansible-playbooks", "/opt/SHIBA-24"];
@@ -193,7 +228,10 @@
             cockpit.gettext("$0 host(s) · $1 playbook").replace("$0", String(h))
                 .replace("$1", String(p));
         const user = $("ad-cred-user").value.trim();
-        $("ad-btn-deploy").disabled = !(h && p && user && !job?.active);
+        // Deploy needs hosts + a playbook + a user, AND the user must be able
+        // to read the deploy key (ACCESS.key_ok), else it would fail at ssh.
+        $("ad-btn-deploy").disabled =
+            !(h && p && user && ACCESS.key_ok && !job?.active);
     }
 
     document.body.addEventListener("change", updateCounts);
@@ -217,7 +255,7 @@
         if (sudo) env.push("DEPLOYER_SUDO_PASSWORD=" + sudo);
 
         const id = "deploy-" + Date.now().toString(36);
-        const opts = {superuser: "require"};
+        const opts = {superuser: false};  // run as the logged-in user
         if (env.length) opts.environ = env;
         const p = cockpit.spawn(["python3", CTRL].concat(args), opts);
         p.stream(data => {
@@ -281,6 +319,7 @@
         updateCounts();
     };
 
+    checkAccess();
     loadPlaybooks();
     updateCounts();
 })();

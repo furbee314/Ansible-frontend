@@ -2,15 +2,22 @@
   "listen_host": "0.0.0.0",
   "listen_port": 8082,
   "auth_token": "",
-  "scan_subnets": ["10.10.10.0/24"],
+  "scan_subnets": [
+    "10.10.10.0/24"
+  ],
   "scan_port": 22,
   "scan_timeout_s": 2.5,
-  "playbook_dirs": ["/opt/ansible-playbooks", "/opt/SHIBA-24"],
+  "playbook_dirs": [
+    "/opt/ansible-playbooks",
+    "/opt/SHIBA-24"
+  ],
   "default_creds": {
     "user": "agent",
     "password": "",
     "sudo_password": "",
     "port": 22
   },
-  "use_ssh_key": true
+  "use_ssh_key": true,
+  "deploy_key": "/etc/ansible-deployer/deploy_ed25519",
+  "deployer_group": "deployer"
 }

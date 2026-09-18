@@ -11,10 +11,6 @@ MIT License, see LICENSE in the repository root.
 
     <link rel="stylesheet" href="patternfly.css">
     <link rel="stylesheet" href="ansible-deployer.css">
-
-    <script type="text/javascript" src="../base1/cockpit.js"></script>
-    <script type="text/javascript" src="po.js"></script>
-    <script type="text/javascript" src="ansible-deployer.js"></script>
 </head>
 
 <body class="pf-v6-m-tabular-nums">
@@ -25,6 +21,8 @@ MIT License, see LICENSE in the repository root.
                 Pick network hosts, pick a playbook, deploy.
             </span>
         </div>
+
+        <div id="ad-access-banner" class="ad-banner ad-hidden" role="status"></div>
 
         <div class="ad-main">
             <!-- LEFT COLUMN: hosts + credentials -->

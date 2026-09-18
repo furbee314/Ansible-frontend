@@ -16,8 +16,9 @@ playbooks that live on the server.
    `ansible-playbook` can run them. Filter by name or STIG id.
 3. **Credentials** — the kickstart-baseline `agent` user is pre-filled from
    `/etc/ansible-deployer/config.json`.
-   - Password left blank → SSH key auth (`~/.ssh/id_ed25519` is offered via
-     `ANSIBLE_SSH_ARGS`).
+   - Password left blank → SSH key auth. The module runs as the logged-in
+     Cockpit user (not root), so it uses the shared `deploy_key` from the
+     config (see "Access model"), offered via `ANSIBLE_SSH_ARGS`.
    - Password entered → passed to ansible as `ANSIBLE_SSH_PASS` (and
      `ANSIBLE_BECOME_PASS` for sudo password); works with or without
      `sshpass` since ansible 2.5+ natively supports the pass env vars.
@@ -25,15 +26,47 @@ playbooks that live on the server.
    then `ansible-playbook` with a per-deployment inventory. Output streams
    live into the page; Stop/Close available.
 
-Everything privileged happens in the root Python controller
-(`ansible_deployer.py`, spawned via `cockpit.spawn({superuser: "require"})`);
-the JS frontend only drives the UI.
+## Access model (no admin needed)
+
+The module spawns the controller with `superuser: false` — it runs as the
+**logged-in Cockpit user**, not root. Everything the module does on the
+control host (scan, read playbooks, read the config, run ansible) is
+readable/runnable by a normal user, so **no polkit/root prompt appears**.
+
+The one secret the module needs is the **deploy SSH key**, used to reach the
+target hosts. Access is therefore gated on reading that key:
+
+- `install.sh` creates a `deployer` group and a shared key
+  `/etc/ansible-deployer/deploy_ed25519` (`root:deployer`, mode `0640`), and
+  records it in `config.json` as `deploy_key`.
+- A user **in the `deployer` group** can read the key → `check` reports
+  `key_ok: true` → the Deploy button enables.
+- A user **not in the group** can't read it → `check` reports `key_ok: false`
+  and the UI shows a banner ("Deploy is disabled: deploy key exists but is
+  not readable by you") instead of failing mid-run.
+
+Target-side privilege (`become`/sudo in STIG tasks) still comes from the
+**sudo password** field in the UI (`ANSIBLE_BECOME_PASS`) — that is unrelated
+to the local access gate.
+
+To grant a user:
+
+```bash
+sudo usermod -aG deployer <user>            # read the key
+ssh-copy-id -i /etc/ansible-deployer/deploy_ed25519.pub <user>@<target>  # trust the key on the target
+# log the user in at https://host:9090/ansible-deployer/
+```
+
+Everything privileged still happens in the Python controller
+(`ansible_deployer.py`); the JS frontend only drives the UI. Subcommands:
+`scan`, `playbooks`, `check`, `deploy`.
 
 ## Install
 
 ```bash
 dnf install -y ansible python3-pyyaml sshpass   # sshpass optional
-sudo ./install.sh            # -> /usr/share/cockpit/ansible-deployer
+sudo ./install.sh            # -> /usr/share/cockpit/ansible-deployer (+ deployer group + deploy key)
+sudo ./install.sh access     # (re)provision group + key + config only
 sudo ./install.sh test       # controller smoke test
 ```
 
@@ -52,6 +85,8 @@ Uninstall: `sudo ./install.sh uninstall`.
 | `scan_port` | SSH port for discovery |
 | `playbook_dirs` | directories walked for playbooks/tasks |
 | `default_creds` | kickstart baseline (user, password, sudo_password, port) |
+| `deploy_key` | path to the shared deploy SSH key (readable by the `deployer` group) |
+| `deployer_group` | group whose members may read `deploy_key` (default `deployer`) |
 
 ## Repository layout
 
@@ -60,10 +95,10 @@ cockpit/            # the module (installed to /usr/share/cockpit/ansible-deploy
   manifest.json     #   menu entry
   index.html        #   page
   ansible-deployer.js / .css
-  ansible_deployer.py  # root controller: scan / playbooks / deploy
+  ansible_deployer.py  # controller (runs as logged-in user): scan / playbooks / check / deploy
 config/config.json  # default configuration
-install.sh          # install / uninstall / test
-tests/              # controller smoke test
+install.sh          # install / uninstall / test / access
+tests/              # controller smoke test + non-root / access verification
 ```
 
 `cockpit/patternfly.css` is a vendored copy of the official PatternFly v6
@@ -72,14 +107,20 @@ bundle (self-contained: no build step required). It can be regenerated with
 
 ## Security notes
 
-- Runs inside Cockpit's auth (your server login; root actions via
-  `superuser: "require"`, i.e. pkexec for non-root admins).
+- Runs inside Cockpit's auth (your server login) but does **not** escalate to
+  root locally — the controller runs as the logged-in user (`superuser: false`),
+  so no polkit/root prompt appears. Deploy rights are gated on reading the
+  shared `deploy_key` (the `deployer` group), not on admin status.
 - The module is only reachable on port 9090, like the rest of Cockpit —
   don't expose it publicly without a VPN/reverse proxy.
-- Job inventories land in `/var/tmp/ansible-deployer-*` (temp dirs) and
-  wrapper playbooks next to the task file (name-prefixed
-  `__deployer_job_`); neither is kept after the run in any meaningful way —
-  clean up `/var/tmp` periodically if that matters.
+- Job inventories and the generated wrapper playbooks both land in
+  `/var/tmp/ansible-deployer-*` (world-writable, so a non-root user can create
+  them) and are name-prefixed `__deployer_job_`; clean up `/var/tmp`
+  periodically if that matters.
+- The deploy key lives at `/etc/ansible-deployer/deploy_ed25519`
+  (`root:deployer`, `0640`). Treat it like any other credential: only add
+  trusted users to the `deployer` group, and rotate it (regenerate + re-add to
+  target `authorized_keys`) if it's ever leaked.
 - Don't put secrets in playbook `debug` output — it streams to the UI.
 
 ## Sample playbooks

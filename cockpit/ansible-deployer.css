@@ -199,6 +199,19 @@
 
 .ad-hidden { display: none !important; }
 
+/* ---- access banner (shown when the user lacks deploy rights) ------- */
+.ad-banner {
+    margin: 10px 0 0;
+    padding: 10px 14px;
+    border: 1px solid var(--ad-border);
+    border-left: 3px solid #f0ab00;
+    border-radius: 4px;
+    background: var(--ad-panel-alt);
+    color: var(--pf-t--global--text--color--default, #e8e8e8);
+    font-size: var(--ad-font);
+    line-height: 1.4;
+}
+
 /* ---- screen reader only ------------------------------------------- */
 .ad-sr-only {
     position: absolute;
