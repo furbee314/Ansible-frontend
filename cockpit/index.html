@@ -166,5 +166,12 @@ MIT License, see LICENSE in the repository root.
             </div>
         </section>
     </div>
+
+    <!-- Scripts go at the end of <body> so the DOM above is fully parsed
+         before ansible-deployer.js binds its handlers (head-loaded scripts
+         would run before these elements exist). -->
+    <script type="text/javascript" src="../base1/cockpit.js"></script>
+    <script type="text/javascript" src="po.js"></script>
+    <script type="text/javascript" src="ansible-deployer.js"></script>
 </body>
 </html>
