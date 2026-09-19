@@ -225,10 +225,15 @@ def cmd_deploy(args):
     # /root key is unreadable — config.json's deploy_key is the real path.
     key = args.key or (cfg.get("deploy_key") or "").strip() \
         or os.path.expanduser("~/.ssh/id_ed25519")
-    # The key is offered ONLY in key-auth mode. ssh tries the key first and,
-    # if it fails, silently falls back to the password — so when the user
-    # entered a password on purpose we skip the key to avoid confusing logs.
-    if os.path.exists(key) and not password:
+    # The deploy key is ALWAYS offered when one is configured and readable,
+    # even when an SSH password was also entered. Reason: this host has no
+    # sshpass, so a password-only SSH session can never complete — with the
+    # key offered, ssh authenticates by key instantly and the password field
+    # is simply unused for the transport (it is NOT the sudo/become
+    # credential; that is DEPLOYER_SUDO_PASSWORD -> ANSIBLE_BECOME_PASS).
+    # Omitting the key in password mode caused a 30s preflight timeout and
+    # "UNREACHABLE ... authentication failed" on every job.
+    if os.path.exists(key):
         ssh_args += " -i %s" % key
     env["ANSIBLE_SSH_ARGS"] = ssh_args
     if password:
