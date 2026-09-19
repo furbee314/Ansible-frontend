@@ -184,6 +184,20 @@ def cmd_playbooks(args):
 
 def stream_proc(cmd, env, timeout=None):
     """Run cmd, pipe stdout/stderr straight to our stdout. Returns exit code."""
+    if os.environ.get("DEPLOYER_DEBUG_ENV"):
+        import copy as _copy
+        red = dict(env)
+        for k in ("ANSIBLE_SSH_PASS", "ANSIBLE_BECOME_PASS", "DEPLOYER_SSH_PASSWORD",
+                  "DEPLOYER_SUDO_PASSWORD"):
+            if k in red:
+                red[k] = "***%dchars***" % len(red[k])
+        sys.stdout.write("[debug-env] cmd=%s\n" % cmd)
+        sys.stdout.write("[debug-env] " +
+                         " ".join("%s=%s" % (k, red[k]) for k in sorted(red)
+                                  if k.startswith("ANSIBLE") or k in
+                                  ("DEPLOYER_SSH_PASSWORD", "DEPLOYER_SUDO_PASSWORD")) +
+                         "\n")
+        sys.stdout.flush()
     p = subprocess.Popen(cmd, env=env, stdin=subprocess.DEVNULL,
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     try:
