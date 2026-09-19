@@ -14,6 +14,9 @@ playbooks that live on the server.
    `playbook` (plays with `hosts:`) or `task` (bare task lists). Bare task
    files are auto-wrapped in a generated thin playbook so
    `ansible-playbook` can run them. Filter by name or STIG id.
+   **Multiple playbooks can be selected at once** (checkboxes); they run
+   one after another in the order selected, and a failing playbook does
+   not stop the rest — the job reports a "partial success" status.
 3. **Credentials** — the kickstart-baseline `agent` user is pre-filled from
    `/etc/ansible-deployer/config.json`.
    - Password left blank → SSH key auth. The module runs as the logged-in
@@ -23,8 +26,10 @@ playbooks that live on the server.
      `ANSIBLE_BECOME_PASS` for sudo password); works with or without
      `sshpass` since ansible 2.5+ natively supports the pass env vars.
 4. **Deploy** — runs `ansible -m ping` preflight against the chosen hosts,
-   then `ansible-playbook` with a per-deployment inventory. Output streams
-   live into the page; Stop/Close available.
+   then `ansible-playbook` for **each selected playbook, in order**, with a
+   per-deployment inventory. Output streams live into the page; Stop/Close
+   available. A failing playbook is logged with its exit code and the
+   remaining playbooks still run (job badge shows "partial success").
 
 ## Access model (no admin needed)
 

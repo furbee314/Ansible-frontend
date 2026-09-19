@@ -184,12 +184,16 @@
             if (q && !hay.includes(q)) return;
             shown++;
             const label = document.createElement("label");
-            label.className = "ad-play pf-v6-c-radio";
-            const radio = document.createElement("input");
-            radio.type = "radio";
-            radio.name = "ad-pb";
-            radio.className = "pf-v6-c-radio__input";
-            radio.value = String(i);
+            label.className = "ad-play pf-v6-c-check";
+            const check = document.createElement("input");
+            check.type = "checkbox";
+            check.className = "pf-v6-c-check__input";
+            check.checked = !!p.selected;
+            check.onchange = e => { p.selected = e.target.checked;
+                label.classList.toggle("sel", p.selected); updateCounts(); };
+            if (p.selected) label.classList.add("sel");
+            const checkLabel = document.createElement("span");
+            checkLabel.className = "pf-v6-c-check__label";
             const badge = document.createElement("span");
             badge.className = "ad-badge ad-" + p.type;
             badge.textContent = p.type;
@@ -201,7 +205,8 @@
             const dir = document.createElement("span");
             dir.className = "ad-dir";
             dir.textContent = p.source_dir.replace(/^\/opt\//, "");
-            label.append(radio, badge, name, dir);
+            checkLabel.append(badge, name, dir);
+            label.append(check, checkLabel);
             el.appendChild(label);
         });
         $("ad-pb-hint").textContent =
@@ -217,18 +222,16 @@
     /* ------------------------------------------------------------------ */
 
     function selHosts() { return HOSTS.filter(h => h.checked).map(h => h.ip); }
-    function selPb() {
-        const r = document.querySelector('input[name="ad-pb"]:checked');
-        return r ? PLAYBOOKS[+r.value] : null;
-    }
+    // multi-select: all checked playbooks, in list (click) order
+    function selPbs() { return PLAYBOOKS.filter(p => p.selected); }
 
     function updateCounts() {
-        const h = selHosts().length, p = selPb() ? 1 : 0;
+        const h = selHosts().length, p = selPbs().length;
         $("ad-sel-counts").textContent =
-            cockpit.gettext("$0 host(s) · $1 playbook").replace("$0", String(h))
+            cockpit.gettext("$0 host(s) · $1 playbook(s)").replace("$0", String(h))
                 .replace("$1", String(p));
         const user = $("ad-cred-user").value.trim();
-        // Deploy needs hosts + a playbook + a user, AND the user must be able
+        // Deploy needs hosts + playbooks + a user, AND the user must be able
         // to read the deploy key (ACCESS.key_ok), else it would fail at ssh.
         $("ad-btn-deploy").disabled =
             !(h && p && user && ACCESS.key_ok && !job?.active);
@@ -241,13 +244,13 @@
     });
 
     $("ad-btn-deploy").onclick = () => {
-        const pb = selPb();
-        if (!pb || job?.active) return;
+        const pbs = selPbs();
+        if (!pbs.length || job?.active) return;
         const args = ["deploy",
             "--hosts", selHosts().join(","),
             "--user", $("ad-cred-user").value.trim(),
             "--port", String(+$("ad-cred-port").value || 22),
-            "--target", pb.path];
+            "--target", pbs.map(p => p.path).join(",")];
         const env = [];
         const pass = $("ad-cred-pass").value;
         const sudo = $("ad-cred-sudo").value;
@@ -277,14 +280,22 @@
         $("ad-job-id").textContent = "#" + id;
         $("ad-job-log").textContent = "";
         $("ad-job-meta").textContent =
-            selHosts().join(", ") + " · " + pb.path + " · user " +
+            selHosts().join(", ") + " · " + pbs.length + " playbook(s) · user " +
             $("ad-cred-user").value.trim() + " · " +
             (pass ? cockpit.gettext("password auth") : cockpit.gettext("ssh-key auth"));
         setJobStatus("running");
         updateCounts();
 
         p.then(() => finishJob("success"))
-         .catch(e => finishJob("error", e));
+         .catch(e => {
+             // the controller exits 1 when some (not all) playbooks fail;
+             // the stream already printed the per-playbook summary, so label
+             // the job "partial" instead of a flat "failed"
+             const log = $("ad-job-log").textContent || "";
+             const m = log.match(/summary: (\d+)\/(\d+) playbook\(s\) succeeded/);
+             finishJob(m ? "partial" : "error",
+                       m ? null : (e && e.message ? e.message : e));
+         });
     };
 
     function appendLog(text) {
@@ -299,6 +310,7 @@
         b.textContent = s === "error" ? cockpit.gettext("failed") :
                         s === "cancelled" ? cockpit.gettext("cancelled") :
                         s === "success" ? cockpit.gettext("succeeded") :
+                        s === "partial" ? cockpit.gettext("partial success") :
                         cockpit.gettext("running");
         if (msg && s === "error") appendLog("\n[deployer] " + msg + "\n");
     }

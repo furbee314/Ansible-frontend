@@ -133,6 +133,16 @@
         rgba(255,255,255,0.08));
 }
 .ad-play input { margin: 0; }
+.ad-play .pf-v6-c-check__label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 auto;
+}
+.ad-play.sel {
+    background-color: var(--pf-t--global--background--color--action--plain--hover,
+        rgba(255,255,255,0.08));
+}
 .ad-name { flex: 1 1 auto; }
 .ad-dir {
     color: var(--ad-muted);
@@ -153,6 +163,7 @@
 .ad-badge.ad-task     { color: var(--pf-t--global--text--color--status--warning--default, #f8a548); }
 .ad-badge.ad-running  { color: var(--pf-t--global--text--color--status--info--default, #73bcf7); }
 .ad-badge.ad-success  { color: var(--pf-t--global--text--color--status--success--default, #37a240); }
+.ad-badge.ad-partial  { color: var(--pf-t--global--text--color--status--warning--default, #f8a548); }
 .ad-badge.ad-error,
 .ad-badge.ad-cancelled{ color: var(--pf-t--global--text--color--status--danger--default, #c9190b); }
 
