@@ -102,7 +102,7 @@ MIT License, see LICENSE in the repository root.
                         </div>
                         <div class="pf-v6-c-form">
                             <label class="pf-v6-c-form__label" for="ad-cred-sudo">
-                                <span class="pf-v6-c-form__label-text" translatable="yes">Sudo password (if it differs)</span>
+                                <span class="pf-v6-c-form__label-text" translatable="yes">Sudo password (needed for become/STIG tasks)</span>
                             </label>
                             <input class="pf-v6-c-form-control" id="ad-cred-sudo" type="password" autocomplete="off">
                         </div>
@@ -135,6 +135,13 @@ MIT License, see LICENSE in the repository root.
 
                 <div class="ad-deploy-bar">
                     <span id="ad-sel-counts" class="ad-muted"></span>
+                    <p id="ad-become-warn" class="ad-become-warn ad-hidden">
+                        ⚠ The selected playbook(s) contain
+                        <code>become</code> tasks — enter the target user's
+                        sudo password below, or grant it a
+                        <code>NOPASSWD</code> sudoers rule, or the job will
+                        fail with “Missing sudo password”.
+                    </p>
                     <button id="ad-btn-deploy" type="button"
                             class="pf-v6-c-button pf-m-primary pf-m-block" disabled>
                         <span class="pf-v6-c-button__icon" aria-hidden="true">▶</span>

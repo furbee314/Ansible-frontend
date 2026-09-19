@@ -168,6 +168,16 @@
 .ad-badge.ad-cancelled{ color: var(--pf-t--global--text--color--status--danger--default, #c9190b); }
 
 /* ---- deploy bar --------------------------------------------------- */
+.ad-become-warn {
+    margin: 0;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: var(--pf-t--global--font--size--sm, 14px);
+    color: var(--pf-t--global--text--color--status--warning--default, #f8a548);
+    background-color: rgba(248, 165, 72, 0.12);
+    border: 1px solid rgba(248, 165, 72, 0.4);
+    align-self: flex-start;
+}
 .ad-deploy-bar {
     display: flex;
     align-items: center;

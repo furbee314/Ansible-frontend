@@ -230,6 +230,12 @@
         $("ad-sel-counts").textContent =
             cockpit.gettext("$0 host(s) · $1 playbook(s)").replace("$0", String(h))
                 .replace("$1", String(p));
+        // Selected playbook(s) request privilege escalation and no sudo
+        // password is entered → they WILL fail with "Missing sudo password".
+        // Say so up front instead of only in the post-mortem log.
+        const needBecome = selPbs().some(p => p.needs_become);
+        $("ad-become-warn").classList.toggle("ad-hidden",
+            !(needBecome && p && !$("ad-cred-sudo").value.trim()));
         const user = $("ad-cred-user").value.trim();
         // Deploy needs hosts + playbooks + a user, AND the user must be able
         // to read the deploy key (ACCESS.key_ok), else it would fail at ssh.
