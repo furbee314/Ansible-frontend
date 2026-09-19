@@ -137,10 +137,13 @@ MIT License, see LICENSE in the repository root.
                     <span id="ad-sel-counts" class="ad-muted"></span>
                     <p id="ad-become-warn" class="ad-become-warn ad-hidden">
                         ⚠ The selected playbook(s) contain
-                        <code>become</code> tasks — enter the target user's
-                        sudo password below, or grant it a
-                        <code>NOPASSWD</code> sudoers rule, or the job will
-                        fail with “Missing sudo password”.
+                        <code>become</code> tasks. Enter the target user's
+                        sudo password below — or, if it is the same as the
+                        SSH login password, enter it in the SSH field (it
+                        is reused for
+                        <code>sudo</code> automatically when this field is
+                        empty). Without either, the job will fail with
+                        “Missing sudo password”.
                     </p>
                     <button id="ad-btn-deploy" type="button"
                             class="pf-v6-c-button pf-m-primary pf-m-block" disabled>

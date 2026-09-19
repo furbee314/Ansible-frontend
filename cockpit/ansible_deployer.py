@@ -238,8 +238,17 @@ def cmd_deploy(args):
     env["ANSIBLE_SSH_ARGS"] = ssh_args
     if password:
         env["ANSIBLE_SSH_PASS"] = password
+    # Become/sudo password: the Sudo field wins. If it is empty but an SSH
+    # password was entered, REUSE the SSH password for become — equivalent
+    # to what `ansible -K` would collect interactively, but delivered to a
+    # non-interactive spawned process (there is no TTY to answer -K with).
+    # This is what makes "same password in both fields, nothing in Sudo"
+    # work on targets where the user's login password is also their sudo
+    # password — the common lab/STIG-test setup.
     if sudo_password:
         env["ANSIBLE_BECOME_PASS"] = sudo_password
+    elif password:
+        env["ANSIBLE_BECOME_PASS"] = password
 
     inv_dir = tempfile.mktemp(prefix="ansible-deployer-", dir="/var/tmp")
     os.makedirs(inv_dir)
