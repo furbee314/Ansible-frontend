@@ -258,10 +258,18 @@
         const opts = {superuser: false};  // run as the logged-in user
         if (env.length) opts.environ = env;
         const p = cockpit.spawn(["python3", CTRL].concat(args), opts);
+        // NOTE: the .stream() callback receives a single TEXT STRING (cockpit
+        // squashes the process's stdout frames into one string, see the
+        // channel `buffer`/`squash` in base1/cockpit.js) — NOT an array of
+        // ArrayBuffer chunks. Decoding each character as binary threw
+        // "parameter 1 is not of type 'ArrayBuffer'" and killed the job.
         p.stream(data => {
-            for (const chunk of data)
-                appendLog(new TextDecoder().decode(chunk));
-            return data.reduce((n, c) => n + c.length, 0);
+            appendLog(typeof data === "string"
+                ? data
+                : new TextDecoder().decode(data));
+            // consume everything (must return a number, else cockpit keeps
+            // re-queueing the payload)
+            return typeof data === "string" ? data.length : data.byteLength;
         });
 
         job = {id, promise: p, active: true, closed: false};
